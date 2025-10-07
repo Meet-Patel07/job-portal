@@ -11,8 +11,8 @@ const connectDB = async () => {
     });
 
     await mongoose.connect(`${process.env.MONGODB_URI}/job-portal`, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+      //   useNewUrlParser: true,
+      //   useUnifiedTopology: true,
     });
   } catch (error) {
     console.error("❌ Database Connection Failed:", error.message);
