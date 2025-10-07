@@ -16,7 +16,7 @@ await connectDB();
 app.use(cors());
 
 // 👇 Clerk Webhooks route — uses raw body for Svix signature verification
-app.post("/webhooks", express.raw({ type: "application/json" }), clerkWebhooks);
+app.post("/webhooks", express.raw({ type: "*/*" }), clerkWebhooks);
 
 // 👇 All other routes use json
 app.use(express.json());
