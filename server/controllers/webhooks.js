@@ -4,8 +4,8 @@ import User from "../models/User.js";
 export const clerkWebhooks = async (req, res) => {
   try {
     console.log("🧾 Raw Body (Buffer):", req.body);
-    console.log("🧾 Type of Body:", typeof req.body);
-    console.log("🧾 Is Buffer:", Buffer.isBuffer(req.body));
+    // console.log("🧾 Type of Body:", typeof req.body);
+    // console.log("🧾 Is Buffer:", Buffer.isBuffer(req.body));
 
     const payloadString = req.body.toString("utf8");
     console.log("📦 Full Payload String:", payloadString);
@@ -21,7 +21,7 @@ export const clerkWebhooks = async (req, res) => {
     // };
 
     const { data, type } = JSON.parse(payloadString);
-    console.log("📨 Event Type:", type);
+    // console.log("📨 Event Type:", type);
 
     switch (type) {
       case "user.created": {

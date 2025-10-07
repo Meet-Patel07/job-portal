@@ -16,7 +16,7 @@ await connectDB();
 app.use(cors());
 
 // Clerk Webhook route — must come AFTER express.raw()
-app.post("/webhooks", express.raw({ type: "application/json" }), clerkWebhooks);
+app.post("/webhooks", express.raw({ type: "*/*" }), clerkWebhooks);
 
 app.use(express.json());
 
