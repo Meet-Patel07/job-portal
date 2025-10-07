@@ -9,12 +9,12 @@
   "routes": [
     {
       "src": "/webhooks",
-      "dest": "server.js",
+      "dest": "/server.js",
       "methods": ["POST"]
     },
     {
       "src": "/(.*)",
-      "dest": "server.js"
+      "dest": "/server.js"
     }
   ]
 }
