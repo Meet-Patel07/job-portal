@@ -9,25 +9,29 @@ import { clerkWebhooks } from "./controllers/webhooks.js";
 // Initialize Express
 const app = express();
 
-// Connect to Database
+// Connect Database
 await connectDB();
 
-// Middlewares
+// CORS setup
 app.use(cors());
+
+// Clerk Webhook route — must come AFTER express.raw()
+app.post("/webhooks", express.raw({ type: "application/json" }), clerkWebhooks);
+
 app.use(express.json());
 
-// Routes
-app.get("/", (req, res) => res.send("API Working"));
-app.get("/debug-sentry", function mainHandler(req, res) {
+// Test Route
+app.get("/", (req, res) => res.send("API Working ✅"));
+
+// Debug Sentry Route
+app.get("/debug-sentry", (req, res) => {
   throw new Error("My first Sentry error!");
 });
-app.post("/webhooks", clerkWebhooks);
 
-// Port
+// Start Server
 const PORT = process.env.PORT || 5000;
 
+// Error handler for Sentry
 Sentry.setupExpressErrorHandler(app);
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`✅ Server is running on port ${PORT}`));
