@@ -1,39 +1,58 @@
-import "./config/instruments.js";
 import express from "express";
-// import cors from "cors";
-import "dotenv/config";
-import connectDB from "./config/db.js";
-import * as Sentry from "@sentry/node";
-import { clerkWebhooks } from "./controllers/webhooks.js";
+import dotenv from "dotenv";
+import { Webhook } from "svix";
+import bodyParser from "body-parser";
+import User from "./models/User.js"; // Adjust the path to your model
 
-// Initialize Express
+dotenv.config();
 const app = express();
 
-// Connect to Database
-await connectDB();
+// Middleware to capture raw body for Clerk webhook verification
+app.use(
+  "/webhooks",
+  bodyParser.raw({ type: "application/json" })
+);
 
-// Middlewares (place cors before routes)
-// app.use(cors());
-
-// 👇 Clerk Webhooks route — uses raw body for Svix signature verification
-app.post("/webhooks", express.raw({ type: "application/json" }), clerkWebhooks);
-
-// 👇 All other routes use json
+// Other routes can use JSON
 app.use(express.json());
 
-// Routes
-app.get("/", (req, res) => res.send("API Working"));
+// Clerk webhook handler
+app.post("/webhooks", async (req, res) => {
+  try {
+    const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
 
-app.get("/debug-sentry", function mainHandler(req, res) {
-  throw new Error("My first Sentry error!");
+    const headers = {
+      "svix-id": req.headers["svix-id"],
+      "svix-timestamp": req.headers["svix-timestamp"],
+      "svix-signature": req.headers["svix-signature"],
+    };
+
+    const payload = req.body; // raw body
+    const evt = whook.verify(payload, headers);
+
+    console.log("✅ Verified Webhook:", evt.type);
+
+    // Handle event types
+    if (evt.type === "user.created") {
+      const data = evt.data;
+      await User.create({
+        clerkId: data.id,
+        email: data.email_addresses[0].email_address,
+        firstName: data.first_name,
+        lastName: data.last_name,
+      });
+    }
+
+    if (evt.type === "user.deleted") {
+      const data = evt.data;
+      await User.findOneAndDelete({ clerkId: data.id });
+    }
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("❌ Webhook Verification Failed:", error.message);
+    res.status(400).json({ error: "Invalid Webhook Signature" });
+  }
 });
 
-// Port
-const PORT = process.env.PORT || 5000;
-
-// Sentry error handler
-Sentry.setupExpressErrorHandler(app);
-
-app.listen(PORT, () => {
-  console.log(`✅ Server is running on port ${PORT}`);
-});
+app.listen(3000, () => console.log("Server running on port 3000"));
