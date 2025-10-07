@@ -1,63 +1,71 @@
-import getRawBody from "raw-body";
 import { Webhook } from "svix";
 import User from "../models/User.js";
 
 export const clerkWebhooks = async (req, res) => {
   try {
-    const payload = await getRawBody(req); // read raw bytes
-    const headers = {
+    console.log("🧾 Inside");
+    // Create a Svix instance with Clerk webhook secret
+    const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
+    const payloadString = req.body.toString();
+    // Verifying Webhook Headers with Svix
+    const payload = req.body;
+    // console.log("🧾 Raw Webhook Payload:", payload);
+    // process.exit(0);
+    await whook.verify(payloadString, {
       "svix-id": req.headers["svix-id"],
       "svix-timestamp": req.headers["svix-timestamp"],
       "svix-signature": req.headers["svix-signature"],
-    };
+    });
 
-    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
-    const evt = wh.verify(payload, headers); // ✅ Verified Clerk event
-    console.log("✅ Webhook verified:", evt.type);
+    // Getting Data from request body
+    // const { data, type } = JSON.parse(payload);
+    const { data, type } = JSON.parse(payloadString);
 
-    const { type, data } = evt;
-
+    // Switch Cases for different Clerk Events
     switch (type) {
       case "user.created": {
         const userData = {
           _id: data.id,
-          name: `${data.first_name || ""} ${data.last_name || ""}`.trim(),
-          email: data.email_addresses?.[0]?.email_address || "",
-          image: data.image_url || "",
+          name: `${data.first_name} ${data.last_name}`,
+          email: data.email_addresses[0].email_address,
+          image: data.image_url,
           resume: "",
         };
 
         const newUser = await User.create(userData);
-        console.log("👤 User created in DB:", newUser);
+        console.log("User Created:", newUser);
+        res.json({});
         break;
       }
-
       case "user.updated": {
-        const updateData = {
-          name: `${data.first_name || ""} ${data.last_name || ""}`.trim(),
-          email: data.email_addresses?.[0]?.email_address || "",
-          image: data.image_url || "",
+        const userData = {
+          email: data.email_addresses[0].email_address,
+          name: `${data.first_name} ${data.last_name}`,
+          image: data.image_url,
         };
-        const updatedUser = await User.findByIdAndUpdate(data.id, updateData, {
+
+        // Update the existing user in the database
+        const updatedUser = await User.findByIdAndUpdate(data.id, userData, {
           new: true,
         });
-        console.log("🧩 User updated:", updatedUser);
+        console.log("User Updated:", updatedUser); // Log success for debugging
+        res.json({});
         break;
       }
-
       case "user.deleted": {
+        // Delete user from the database
         await User.findByIdAndDelete(data.id);
-        console.log("🗑️ User deleted:", data.id);
+        console.log("User Deleted:", data.id); // Log success for debugging
+        res.json({});
         break;
       }
-
       default:
-        console.log("⚙️ Unhandled event type:", type);
+        console.log("Unhandled Event Type:", type);
+        res.json({});
+        break;
     }
-
-    res.status(200).json({ received: true });
-  } catch (err) {
-    console.error("❌ Webhook processing error:", err.message);
-    res.status(400).json({ error: err.message });
+  } catch (error) {
+    console.error("Webhook Error:", error.message);
+    res.json({ success: false, message: "Webhooks Error" });
   }
 };
