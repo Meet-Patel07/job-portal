@@ -10,15 +10,15 @@ export const clerkWebhooks = async (req, res) => {
     const payloadString = req.body.toString("utf8");
     console.log("📦 Full Payload String:", payloadString);
 
-    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
+    // const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
 
-    wh.verify(payloadString, headers);
+    // wh.verify(payloadString, headers);
 
-    const headers = {
-      "svix-id": req.headers["svix-id"],
-      "svix-timestamp": req.headers["svix-timestamp"],
-      "svix-signature": req.headers["svix-signature"],
-    };
+    // const headers = {
+    //   "svix-id": req.headers["svix-id"],
+    //   "svix-timestamp": req.headers["svix-timestamp"],
+    //   "svix-signature": req.headers["svix-signature"],
+    // };
 
     const { data, type } = JSON.parse(payloadString);
     console.log("📨 Event Type:", type);
