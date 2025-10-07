@@ -1,50 +1,39 @@
+import "./config/instrument.js";
 import express from "express";
-import { Webhook } from "svix";
-import bodyParser from "body-parser";
-import User from "./models/User.js"; // adjust path if needed
-import dotenv from "dotenv";
+import cors from "cors";
+import "dotenv/config";
+import connectDB from "./config/db.js";
+import * as Sentry from "@sentry/node";
+import { clerkWebhooks } from "./controllers/webhooks.js";
 
-dotenv.config();
+// Initialize Express
 const app = express();
 
-// Important: Use raw body for verification
-app.use("/webhooks", bodyParser.raw({ type: "application/json" }));
+// Connect to Database
+await connectDB();
 
-app.post("/webhooks", async (req, res) => {
-  try {
-    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
+// Middlewares (place cors before routes)
+app.use(cors());
 
-    const payload = req.body; // raw buffer
-    const headers = {
-      "svix-id": req.headers["svix-id"],
-      "svix-signature": req.headers["svix-signature"],
-      "svix-timestamp": req.headers["svix-timestamp"],
-    };
+// 👇 Clerk Webhooks route — uses raw body for Svix signature verification
+app.post("/webhooks", express.raw({ type: "application/json" }), clerkWebhooks);
 
-    const event = wh.verify(payload, headers); // <--- CRITICAL LINE
-
-    console.log("✅ Webhook verified successfully:", event.type);
-
-    if (event.type === "user.created") {
-      const data = event.data;
-      await User.create({
-        clerkId: data.id,
-        firstName: data.first_name,
-        lastName: data.last_name,
-        email: data.email_addresses[0].email_address,
-        imageUrl: data.image_url,
-      });
-      console.log("👤 User saved to MongoDB");
-    }
-
-    return res.status(200).json({ success: true });
-  } catch (err) {
-    console.error("❌ Webhook verification failed:", err.message);
-    return res.status(400).json({ error: "Invalid Webhook Signature" });
-  }
-});
-
+// 👇 All other routes use json
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// Routes
+app.get("/", (req, res) => res.send("API Working"));
+
+app.get("/debug-sentry", function mainHandler(req, res) {
+  throw new Error("My first Sentry error!");
+});
+
+// Port
+const PORT = process.env.PORT || 5000;
+
+// Sentry error handler
+Sentry.setupExpressErrorHandler(app);
+
+app.listen(PORT, () => {
+  console.log(`✅ Server is running on port ${PORT}`);
+});
