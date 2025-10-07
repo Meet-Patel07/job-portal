@@ -9,7 +9,6 @@ const app = express();
 
 // Important: Use raw body for verification
 app.use("/webhooks", bodyParser.raw({ type: "application/json" }));
-app.use(express.json());
 
 app.post("/webhooks", async (req, res) => {
   try {
@@ -44,6 +43,8 @@ app.post("/webhooks", async (req, res) => {
     return res.status(400).json({ error: "Invalid Webhook Signature" });
   }
 });
+
+app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
