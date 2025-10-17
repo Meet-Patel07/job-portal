@@ -13,7 +13,7 @@ export const clerkWebhooks = async (req, res) => {
       req.headers["svix-timestamp"] &&
       req.headers["svix-signature"]
     ) {
-      const CLERK_WEBHOOK_SECRET = "whsec_sFYLi9J0p9tEFU/LrJ4nREx9ePsB/VxO";
+      const CLERK_WEBHOOK_SECRET = "whsec_0ioqeUMNZtVKXxlp4eShDLQvURkyK0mg";
       const whook = new Webhook(CLERK_WEBHOOK_SECRET);
 
       const payload = req.body.toString("utf8");
