@@ -72,8 +72,8 @@ Hosting: Vercel (Client) & Render/Local (Server)
    ```
 
 ### 3. Configure Environment Variables
+#### Server .env:
 ```
-Server .env:
 PORT=5000  
 MONGO_URI=your_mongodb_uri  
 CLOUDINARY_NAME=your_cloud_name  
